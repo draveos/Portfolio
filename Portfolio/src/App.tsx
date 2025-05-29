@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import Sidebar from "./components/sidebar"
 import HomePage from "./pages/HomePage"
 import ProfilePage from "./pages/ProfilePage"
@@ -24,24 +24,113 @@ function App() {
     }, [])
 
     const renderPage = () => {
+        const pageVariants = {
+            initial: { opacity: 0, x: 20, scale: 0.98 },
+            animate: { opacity: 1, x: 0, scale: 1 },
+            exit: { opacity: 0, x: -20, scale: 0.98 },
+        }
+
+        const pageTransition = {
+            duration: 0.4,
+            ease: [0.4, 0, 0.2, 1],
+        }
+
         switch (currentPage) {
             case "home":
-                return <HomePage onNavigate={setCurrentPage} />
+                return (
+                    <motion.div
+                        key="home"
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={pageTransition}
+                        className="w-full h-full"
+                    >
+                        <HomePage onNavigate={setCurrentPage} />
+                    </motion.div>
+                )
             case "profile":
-                return <ProfilePage />
+                return (
+                    <motion.div
+                        key="profile"
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={pageTransition}
+                        className="w-full h-full"
+                    >
+                        <ProfilePage />
+                    </motion.div>
+                )
             case "tools":
-                return <ToolsPage />
+                return (
+                    <motion.div
+                        key="tools"
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={pageTransition}
+                        className="w-full h-full"
+                    >
+                        <ToolsPage />
+                    </motion.div>
+                )
             case "roadmap":
-                return <RoadmapPage />
+                return (
+                    <motion.div
+                        key="roadmap"
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={pageTransition}
+                        className="w-full h-full"
+                    >
+                        <RoadmapPage />
+                    </motion.div>
+                )
             case "contacts":
-                return <ContactsPage />
+                return (
+                    <motion.div
+                        key="contacts"
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={pageTransition}
+                        className="w-full h-full"
+                    >
+                        <ContactsPage />
+                    </motion.div>
+                )
             default:
-                return <HomePage onNavigate={setCurrentPage} />
+                return (
+                    <motion.div
+                        key="home"
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={pageTransition}
+                        className="w-full h-full"
+                    >
+                        <HomePage onNavigate={setCurrentPage} />
+                    </motion.div>
+                )
         }
     }
 
     return (
-        <div className="flex h-screen w-screen bg-black overflow-hidden">
+        <div className="relative h-screen w-screen bg-black overflow-hidden">
+            {/* Main content area - always full width */}
+            <main className="w-full h-full overflow-hidden">
+                <AnimatePresence mode="wait">{renderPage()}</AnimatePresence>
+            </main>
+
+            {/* Sidebar overlaid on top with higher z-index */}
             <Sidebar
                 isOpen={sidebarOpen}
                 onToggle={() => setSidebarOpen(!sidebarOpen)}
@@ -49,15 +138,6 @@ function App() {
                 onNavigate={setCurrentPage}
                 isInitialLoad={isInitialLoad}
             />
-            <main
-                className="flex-1 h-screen overflow-hidden relative"
-                style={{
-                    marginLeft: sidebarOpen ? "348px" : "40px",
-                    transition: "margin-left 0.6s ease",
-                }}
-            >
-                <AnimatePresence mode="wait">{renderPage()}</AnimatePresence>
-            </main>
         </div>
     )
 }

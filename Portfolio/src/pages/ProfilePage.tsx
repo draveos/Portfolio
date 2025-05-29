@@ -14,18 +14,50 @@ interface MousePosition {
 interface SwimmingText {
     id: string
     text: string
+    originalX: number
+    originalY: number
     x: number
     y: number
     vx: number
     vy: number
     side: "left" | "right"
+    fontSize: number
+    color: string
 }
 
-const leftTexts = ["UI / UX Designer", "Interactive", "Developer", "from", "CAU", "AI Department"]
-const rightTexts = ["Design for fun", "for life", "and most", "importantly", "with passion", "with creativity"]
+interface Particle {
+    id: number
+    x: number
+    y: number
+    vx: number
+    vy: number
+    life: number
+    maxLife: number
+}
+
+const leftTexts = [
+    { text: "UI/UX Designer", size: 32, color: "#e5e7eb" },
+    { text: "Interactive", size: 28, color: "#d1d5db" },
+    { text: "Developer", size: 36, color: "#f3f4f6" },
+    { text: "from Seoul", size: 24, color: "#9ca3af" },
+    { text: "CAU", size: 40, color: "#ffffff" },
+    { text: "AI Department", size: 20, color: "#6b7280" },
+]
+
+const rightTexts = [
+    { text: "Design for fun", size: 30, color: "#e5e7eb" },
+    { text: "for life", size: 26, color: "#d1d5db" },
+    { text: "and most", size: 22, color: "#9ca3af" },
+    { text: "importantly", size: 34, color: "#f3f4f6" },
+    { text: "with passion", size: 38, color: "#ffffff" },
+    { text: "& creativity", size: 28, color: "#d1d5db" },
+]
+
+const centerX = 830
+const centerY = 350
 
 const ProfilePage: React.FC<ProfilePageProps> = () => {
-    const [mousePos, setMousePos] = useState<MousePosition>({ x: 0, y: 0 })
+    const [mousePos, setMousePos] = useState<MousePosition>({ x: centerX, y: centerY })
     const [clickCount, setClickCount] = useState(0)
     const [glassShaking, setGlassShaking] = useState(false)
     const [glassBroken, setGlassBroken] = useState(false)
@@ -33,29 +65,55 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         [],
     )
     const [swimmingTexts, setSwimmingTexts] = useState<SwimmingText[]>([])
+    const [particles, setParticles] = useState<Particle[]>([])
+    const [eyeGlow, setEyeGlow] = useState(false)
+    const [breathingPhase, setBreathingPhase] = useState(0)
     const animationRef = useRef<number>()
+    const breathingRef = useRef<number>()
 
-    // Initialize swimming texts
+    // Initialize swimming texts with better positioning
     useEffect(() => {
         const initTexts: SwimmingText[] = [
-            ...leftTexts.map((text, index) => ({
-                id: `left-${index}`,
-                text,
-                x: 150,
-                y: 200 + index * 40,
-                vx: (Math.random() - 0.5) * 0.5,
-                vy: (Math.random() - 0.5) * 0.5,
-                side: "left" as const,
-            })),
-            ...rightTexts.map((text, index) => ({
-                id: `right-${index}`,
-                text,
-                x: window.innerWidth - 250,
-                y: 200 + index * 40,
-                vx: (Math.random() - 0.5) * 0.5,
-                vy: (Math.random() - 0.5) * 0.5,
-                side: "right" as const,
-            })),
+            ...leftTexts.map((item, index) => {
+                const angle = (index / leftTexts.length) * Math.PI - Math.PI / 2
+                const radius = 280 + index * 20
+                const originalX = centerX + Math.cos(angle + Math.PI) * radius
+                const originalY = centerY + Math.sin(angle + Math.PI) * radius * 0.8
+
+                return {
+                    id: `left-${index}`,
+                    text: item.text,
+                    originalX,
+                    originalY,
+                    x: originalX,
+                    y: originalY,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    side: "left" as const,
+                    fontSize: item.size,
+                    color: item.color,
+                }
+            }),
+            ...rightTexts.map((item, index) => {
+                const angle = (index / rightTexts.length) * Math.PI - Math.PI / 2
+                const radius = 280 + index * 20
+                const originalX = centerX + Math.cos(angle) * radius
+                const originalY = centerY + Math.sin(angle) * radius * 0.8
+
+                return {
+                    id: `right-${index}`,
+                    text: item.text,
+                    originalX,
+                    originalY,
+                    x: originalX,
+                    y: originalY,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    side: "right" as const,
+                    fontSize: item.size,
+                    color: item.color,
+                }
+            }),
         ]
         setSwimmingTexts(initTexts)
     }, [])
@@ -70,44 +128,85 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         return () => window.removeEventListener("mousemove", handleMouseMove)
     }, [])
 
-    // Swimming animation
+    // Breathing animation
+    useEffect(() => {
+        const breathe = () => {
+            setBreathingPhase((prev) => prev + 0.02)
+            breathingRef.current = requestAnimationFrame(breathe)
+        }
+        breathingRef.current = requestAnimationFrame(breathe)
+        return () => {
+            if (breathingRef.current) {
+                cancelAnimationFrame(breathingRef.current)
+            }
+        }
+    }, [])
+
+    // Enhanced swimming animation with return-to-origin behavior
     useEffect(() => {
         const animate = () => {
             setSwimmingTexts((prev) =>
                 prev.map((text) => {
-                    let { x, y, vx, vy } = text
+                    let { x, y, vx, vy, originalX, originalY } = text
 
-                    // Natural swimming motion
-                    x += vx
-                    y += vy
-
-                    // Boundary bouncing
-                    if (x < 50 || x > window.innerWidth - 200) vx *= -1
-                    if (y < 150 || y > window.innerHeight - 100) vy *= -1
-
-                    // Cursor avoidance (fish-like behavior)
+                    // Distance from mouse
                     const dx = mousePos.x - x
                     const dy = mousePos.y - y
                     const distance = Math.sqrt(dx * dx + dy * dy)
 
-                    if (distance < 100) {
-                        const avoidanceForce = 0.02
-                        const avoidX = (-dx / distance) * avoidanceForce
-                        const avoidY = (-dy / distance) * avoidanceForce
+                    // Strong avoidance when mouse is near
+                    if (distance < 150) {
+                        const avoidanceForce = 0.08
+                        const avoidX = ((-dx / distance) * avoidanceForce * (150 - distance)) / 150
+                        const avoidY = ((-dy / distance) * avoidanceForce * (150 - distance)) / 150
                         vx += avoidX
                         vy += avoidY
                     }
 
-                    // Damping
-                    vx *= 0.99
-                    vy *= 0.99
+                    // Return to original position when mouse is far
+                    const returnDx = originalX - x
+                    const returnDy = originalY - y
+                    const returnDistance = Math.sqrt(returnDx * returnDx + returnDy * returnDy)
 
-                    // Random movement
-                    vx += (Math.random() - 0.5) * 0.01
-                    vy += (Math.random() - 0.5) * 0.01
+                    if (distance > 200 && returnDistance > 5) {
+                        const returnForce = 0.02
+                        vx += (returnDx / returnDistance) * returnForce
+                        vy += (returnDy / returnDistance) * returnForce
+                    }
+
+                    // Natural swimming motion around original position
+                    const timeOffset = Date.now() * 0.001 + text.id.charCodeAt(0)
+                    const swimX = Math.sin(timeOffset * 0.5) * 2
+                    const swimY = Math.cos(timeOffset * 0.3) * 1.5
+
+                    if (distance > 200) {
+                        vx += swimX * 0.01
+                        vy += swimY * 0.01
+                    }
+
+                    // Apply velocity
+                    x += vx
+                    y += vy
+
+                    // Damping
+                    vx *= 0.95
+                    vy *= 0.95
 
                     return { ...text, x, y, vx, vy }
                 }),
+            )
+
+            // Update particles
+            setParticles((prev) =>
+                prev
+                    .map((particle) => ({
+                        ...particle,
+                        x: particle.x + particle.vx,
+                        y: particle.y + particle.vy,
+                        vy: particle.vy + 0.1, // gravity
+                        life: particle.life - 1,
+                    }))
+                    .filter((particle) => particle.life > 0),
             )
 
             animationRef.current = requestAnimationFrame(animate)
@@ -126,127 +225,179 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 
         setClickCount((prev) => prev + 1)
         setGlassShaking(true)
+        setEyeGlow(true)
 
-        setTimeout(() => setGlassShaking(false), 200)
+        // Create particles on click
+        const newParticles = Array.from({ length: 8 }, (_, i) => ({
+            id: Date.now() + i,
+            x: centerX,
+            y: centerY,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8 - 2,
+            life: 60,
+            maxLife: 60,
+        }))
+        setParticles((prev) => [...prev, ...newParticles])
+
+        setTimeout(() => {
+            setGlassShaking(false)
+            setEyeGlow(false)
+        }, 300)
 
         if (clickCount >= 99) {
             setGlassBroken(true)
             // Create glass shards
-            const shards = Array.from({ length: 12 }, (_, i) => ({
+            const shards = Array.from({ length: 20 }, (_, i) => ({
                 id: i,
                 x: 0,
                 y: 0,
-                vx: (Math.random() - 0.5) * 10,
-                vy: (Math.random() - 0.5) * 10,
+                vx: (Math.random() - 0.5) * 15,
+                vy: (Math.random() - 0.5) * 15,
             }))
             setGlassShards(shards)
         }
     }
 
-    const faceX = mousePos.x * 0.1
-    const faceY = mousePos.y * 0.1
+    // Enhanced face tracking with limits
+    const maxOffset = 15
+    const faceOffsetX = Math.max(-maxOffset, Math.min(maxOffset, (mousePos.x - centerX) * 0.03))
+    const faceOffsetY = Math.max(-maxOffset, Math.min(maxOffset, (mousePos.y - centerY) * 0.03))
+
+    // Eye tracking
+    const eyeOffsetX = (mousePos.x - centerX) * 0.02
+    const eyeOffsetY = (mousePos.y - centerY) * 0.02
+
+    // Breathing effect
+    const breathingScale = 1 + Math.sin(breathingPhase) * 0.02
 
     return (
         <div className="w-full h-screen bg-neutral-900 relative overflow-hidden">
-            {/* Title */}
-            <motion.h1
-                className="absolute top-[632px] left-[778px] text-[200px] font-extralight text-white leading-[64px] text-center w-[1645px]"
-                initial={{ opacity: 0, y: -30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-                style={{ transform: "scale(0.5)", transformOrigin: "top left" }}
-            >
-                Se Jin Kim
-            </motion.h1>
+            {/* Ambient particles */}
+            {particles.map((particle) => (
+                <motion.div
+                    key={particle.id}
+                    className="absolute w-2 h-2 bg-white rounded-full pointer-events-none"
+                    style={{
+                        left: particle.x,
+                        top: particle.y,
+                        opacity: particle.life / particle.maxLife,
+                    }}
+                />
+            ))}
 
             {/* Swimming Texts */}
             {swimmingTexts.map((text) => (
                 <motion.div
                     key={text.id}
-                    className="absolute text-gray-300 text-lg pointer-events-none select-none z-10"
+                    className="absolute pointer-events-none select-none z-10 font-light"
                     style={{
                         x: text.x,
                         y: text.y,
+                        fontSize: text.fontSize,
+                        color: text.color,
+                        textShadow: "0 0 20px rgba(255,255,255,0.3)",
                     }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 + Math.random() * 0.5, duration: 0.8 }}
+                    whileHover={{ scale: 1.1, color: "#ffffff" }}
                 >
                     {text.text}
                 </motion.div>
             ))}
 
-            {/* Left Text Column */}
-            <div
-                className="absolute left-[744px] top-[976px] w-96 h-[579px] text-white text-5xl font-bold leading-[64px]"
-                style={{ transform: "scale(0.5)", transformOrigin: "top left" }}
-            >
-                UI / UX Designer
-                <br />
-                Interactive Developer
-                <br />
-                <br />
-                from <br />
-                <br />
-                CAU <br />
-                AI Department
-            </div>
-
-            {/* Right Text Column */}
-            <div
-                className="absolute left-[2007px] top-[976px] w-96 h-[579px] text-white text-5xl font-bold leading-[64px] text-right"
-                style={{ transform: "scale(0.5)", transformOrigin: "top left" }}
-            >
-                Design for fun
-                <br />
-                for life
-                <br />
-                <br />
-                and most importantly
-                <br />
-                <br />
-                with passion
-                <br />
-                with creativity
-            </div>
-
-            {/* Face Container */}
-            <motion.div
-                className="absolute left-[1105px] top-[1030px] w-[992px] h-[612px] cursor-pointer z-20"
+            {/* Main Title */}
+            <motion.h1
+                className="absolute text-6xl font-extralight text-white text-center select-none"
                 style={{
-                    x: faceX,
-                    y: faceY,
-                    transform: "scale(0.5)",
-                    transformOrigin: "top left",
+                    left: centerX,
+                    top: centerY + 200,
+                    transform: "translateX(-50%)",
+                    textShadow: "0 0 30px rgba(255,255,255,0.5)",
+                }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+            >
+                SeJin Kim
+            </motion.h1>
+
+            {/* Profile Container */}
+            <motion.div
+                className="absolute cursor-pointer z-20"
+                style={{
+                    left: centerX - 100,
+                    top: centerY - 100,
+                    x: faceOffsetX,
+                    y: faceOffsetY,
+                    scale: breathingScale,
                 }}
                 onClick={handleFaceClick}
-                animate={glassShaking ? { rotate: [0, -2, 2, -2, 2, 0] } : {}}
-                transition={{ duration: 0.2 }}
+                animate={glassShaking ? { rotate: [0, -3, 3, -3, 3, 0] } : {}}
+                transition={{ duration: 0.3 }}
+                whileHover={{ scale: breathingScale * 1.05 }}
             >
-                {/* Face Circle */}
-                <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-600 rounded-full relative flex items-center justify-center">
+                {/* Profile Image Placeholder */}
+                <div className="w-48 h-48 bg-gradient-to-br from-amber-200 to-amber-400 rounded-full relative flex items-center justify-center overflow-hidden shadow-2xl">
+                    {/* Face features */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-amber-600 opacity-30" />
+
                     {/* Beard */}
-                    <div className="absolute bottom-32 w-96 h-64 bg-gray-800 rounded-b-full" />
+                    <motion.div
+                        className="absolute bottom-8 w-32 h-20 bg-gradient-to-b from-amber-800 to-amber-900 rounded-b-full"
+                        animate={{ scaleY: 1 + Math.sin(breathingPhase * 0.5) * 0.05 }}
+                    />
 
                     {/* Eyes */}
-                    <div className="absolute top-64 left-[300px] w-16 h-16 bg-black rounded-full" />
-                    <div className="absolute top-64 right-[300px] w-16 h-16 bg-black rounded-full" />
+                    <div className="absolute top-16 flex gap-8">
+                        <motion.div
+                            className="w-4 h-4 bg-black rounded-full relative"
+                            style={{
+                                x: eyeOffsetX,
+                                y: eyeOffsetY,
+                                boxShadow: eyeGlow ? "0 0 20px #60a5fa" : "none",
+                            }}
+                        >
+                            <div className="absolute top-1 left-1 w-1 h-1 bg-white rounded-full" />
+                        </motion.div>
+                        <motion.div
+                            className="w-4 h-4 bg-black rounded-full relative"
+                            style={{
+                                x: eyeOffsetX,
+                                y: eyeOffsetY,
+                                boxShadow: eyeGlow ? "0 0 20px #60a5fa" : "none",
+                            }}
+                        >
+                            <div className="absolute top-1 left-1 w-1 h-1 bg-white rounded-full" />
+                        </motion.div>
+                    </div>
+
+                    {/* Nose */}
+                    <div className="absolute top-20 w-2 h-3 bg-amber-600 rounded-full" />
+
+                    {/* Mouth */}
+                    <motion.div
+                        className="absolute top-24 w-6 h-1 bg-amber-800 rounded-full"
+                        animate={{
+                            scaleX: 1 + Math.sin(breathingPhase * 2) * 0.1,
+                        }}
+                    />
 
                     {/* Glasses */}
                     <AnimatePresence>
                         {!glassBroken && (
                             <motion.div
-                                className="absolute top-48 flex items-center gap-8"
-                                animate={glassShaking ? { x: [-4, 4, -4, 4, 0] } : {}}
-                                exit={{ opacity: 0, scale: 0 }}
-                                transition={{ duration: 0.3 }}
+                                className="absolute top-12 flex items-center gap-2"
+                                animate={glassShaking ? { x: [-2, 2, -2, 2, 0] } : {}}
+                                exit={{ opacity: 0, scale: 0, rotate: 180 }}
+                                transition={{ duration: 0.5 }}
                             >
                                 {/* Left lens */}
-                                <div className="w-48 h-40 border-8 border-black rounded-2xl bg-white bg-opacity-20" />
+                                <div className="w-12 h-10 border-2 border-black rounded-lg bg-blue-100 bg-opacity-30 backdrop-blur-sm" />
                                 {/* Bridge */}
-                                <div className="w-12 h-4 bg-black" />
+                                <div className="w-3 h-1 bg-black rounded-full" />
                                 {/* Right lens */}
-                                <div className="w-48 h-40 border-8 border-black rounded-2xl bg-white bg-opacity-20" />
+                                <div className="w-12 h-10 border-2 border-black rounded-lg bg-blue-100 bg-opacity-30 backdrop-blur-sm" />
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -257,25 +408,62 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                             glassShards.map((shard) => (
                                 <motion.div
                                     key={shard.id}
-                                    className="absolute w-8 h-8 bg-white opacity-80"
-                                    initial={{ x: 0, y: -80, rotate: 0 }}
+                                    className="absolute w-2 h-2 bg-blue-200 opacity-80 rotate-45"
+                                    initial={{ x: 0, y: -20, rotate: 0, scale: 1 }}
                                     animate={{
-                                        x: shard.vx * 80,
-                                        y: shard.vy * 80,
-                                        rotate: 360,
+                                        x: shard.vx * 20,
+                                        y: shard.vy * 20,
+                                        rotate: 720,
                                         opacity: 0,
+                                        scale: 0,
                                     }}
-                                    transition={{ duration: 1, ease: "easeOut" }}
+                                    transition={{ duration: 1.5, ease: "easeOut" }}
                                 />
                             ))}
                     </AnimatePresence>
                 </div>
 
-                {/* Click counter */}
-                <div className="absolute -bottom-32 left-1/2 transform -translate-x-1/2 text-white text-2xl">
-                    {clickCount}/100
-                </div>
+                {/* Click Progress */}
+                <motion.div
+                    className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-white text-lg font-light"
+                    animate={{ opacity: clickCount > 0 ? 1 : 0 }}
+                >
+                    <div className="text-center">
+                        <div className="text-sm opacity-70">Break the glasses</div>
+                        <div className="text-xl">{clickCount}/100</div>
+                        <div className="w-24 h-1 bg-gray-700 rounded-full mt-2 overflow-hidden">
+                            <motion.div
+                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${clickCount}%` }}
+                                transition={{ duration: 0.3 }}
+                            />
+                        </div>
+                    </div>
+                </motion.div>
             </motion.div>
+
+            {/* Floating decorative elements */}
+            {Array.from({ length: 6 }).map((_, i) => (
+                <motion.div
+                    key={i}
+                    className="absolute w-1 h-1 bg-white rounded-full opacity-50"
+                    style={{
+                        left: centerX + Math.cos((i * Math.PI) / 3) * 300,
+                        top: centerY + Math.sin((i * Math.PI) / 3) * 300,
+                    }}
+                    animate={{
+                        y: [0, -10, 0],
+                        opacity: [0.3, 0.8, 0.3],
+                    }}
+                    transition={{
+                        duration: 3,
+                        delay: i * 0.5,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                    }}
+                />
+            ))}
         </div>
     )
 }
