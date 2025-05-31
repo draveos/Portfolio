@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { PageType } from "../App"
@@ -20,16 +19,17 @@ const menuItems: { key: PageType; label: string; delay: number }[] = [
     { key: "contacts", label: "Contacts", delay: 0.4 },
 ]
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavigate, isInitialLoad }) => {
+const Sidebar = ({ isOpen, onToggle, currentPage, onNavigate, isInitialLoad }: SidebarProps) => {
     const [showShockwave, setShowShockwave] = useState(false)
-    const [isAnimating, setIsAnimating] = useState(false)
 
     const handleToggle = () => {
         setShowShockwave(true)
-        setIsAnimating(true)
         setTimeout(() => setShowShockwave(false), 600)
-        setTimeout(() => setIsAnimating(false), 600)
         onToggle()
+    }
+
+    const handleNavigate = (page: PageType) => {
+        onNavigate(page)
     }
 
     return (
@@ -37,20 +37,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
             className="fixed left-0 top-0 h-screen z-50 overflow-hidden"
             initial={isInitialLoad ? { width: 0 } : false}
             animate={{
-                width: isOpen ? "348px" : "60px",
+                width: isOpen ? "348px" : "140px",
+                x: isOpen ? 0 : -10, // 닫힐 때 살짝 왼쪽으로
             }}
             transition={{
-                duration: 0.6,
+                duration: 0.8,
                 ease: [0.4, 0, 0.2, 1],
+                x: { duration: 0.4 }
             }}
         >
-            {/* Background with color transition */}
+            {/* Professional Background with smooth transition */}
             <motion.div
-                className="absolute inset-0 rounded-r-[50px] shadow-2xl"
+                className="absolute inset-0 rounded-r-[50px] shadow-2xl backdrop-blur-sm"
                 initial={isInitialLoad ? { scaleX: 0 } : false}
                 animate={{
                     scaleX: 1,
-                    backgroundColor: isOpen ? "#ffffff" : "#000000",
+                    opacity: isOpen ? 0.97 : 0.85,
+                    backgroundColor: "#ffffff",
                 }}
                 transition={{
                     duration: 0.8,
@@ -60,15 +63,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
                 style={{ transformOrigin: "left center" }}
             />
 
-            {/* Gradient overlay for smooth transition */}
+            {/* Enhanced gradient overlay for professional look */}
             <motion.div
                 className="absolute inset-0 rounded-r-[50px]"
                 animate={{
-                    background: isOpen
-                        ? "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 100%)"
-                        : "linear-gradient(90deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 80%, transparent 100%)",
+                    opacity: isOpen ? 0.95 : 0.85,
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.98) 50%, rgba(255,255,255,1) 100%)",
+                    backdropFilter: "blur(8px)",
                 }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+            />
+
+            {/* Subtle border for professional appearance */}
+            <motion.div
+                className="absolute inset-0 rounded-r-[50px] border-r border-t border-b"
+                animate={{
+                    borderColor: "rgba(229, 231, 235, 0.3)",
+                    opacity: isOpen ? 0.3 : 0.2,
+                }}
+                transition={{ duration: 0.6 }}
             />
 
             {/* Content */}
@@ -84,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
                     }}
                 >
                     <AnimatePresence mode="wait">
-                        {isOpen && (
+                        {isOpen ? (
                             <motion.div
                                 initial={{ opacity: 0, y: -20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -95,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
                                 }}
                             >
                                 <button
-                                    onClick={() => onNavigate("home")}
+                                    onClick={() => handleNavigate("home")}
                                     className="text-left hover:opacity-70 transition-opacity w-full group"
                                 >
                                     <motion.h1
@@ -111,10 +124,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
 
                                 {/* Animated division line */}
                                 <motion.div
-                                    className="w-full h-0.5 bg-black mt-4"
+                                    className="w-full h-0.5 bg-gradient-to-r from-gray-300 via-gray-600 to-gray-300 mt-4"
                                     initial={{ scaleX: 0 }}
                                     animate={{ scaleX: 1 }}
-                                    exit={{ scaleX: 0 }}
+                                    exit={{ scaleX: 0, transition: { duration: 0.3 } }}
                                     transition={{
                                         duration: 0.5,
                                         delay: 0.2,
@@ -123,6 +136,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
                                     style={{ transformOrigin: "left center" }}
                                 />
                             </motion.div>
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                className="flex justify-center"
+                            >
+                                <motion.div
+                                    className="text-2xl font-light text-zinc-950 cursor-pointer"
+                                    whileHover={{
+                                        scale: 1.1,
+                                        color: "#666666",
+                                    }}
+                                    onClick={() => handleNavigate("home")}
+                                >
+                                    SJ
+                                </motion.div>
+                            </motion.div>
                         )}
                     </AnimatePresence>
                 </motion.div>
@@ -130,110 +161,96 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
                 {/* Menu Items */}
                 <motion.nav className="flex-1 flex flex-col gap-8 mt-8">
                     <AnimatePresence mode="wait">
-                        {isOpen &&
-                            !isAnimating &&
-                            menuItems.map((item, index) => (
-                                <motion.button
-                                    key={item.key}
-                                    className={`text-center py-3 text-3xl font-extralight transition-all hover:text-gray-600 hover:translate-x-2 w-full relative overflow-hidden ${
-                                        currentPage === item.key ? "text-gray-800 font-medium" : "text-black"
-                                    }`}
-                                    onClick={() => onNavigate(item.key)}
-                                    initial={{ opacity: 0, x: -50, rotateY: -15 }}
-                                    animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                                    exit={{ opacity: 0, x: -50, rotateY: -15 }}
-                                    transition={{
-                                        duration: 0.5,
-                                        delay: isInitialLoad ? 1.0 + item.delay : 0.1 + index * 0.1,
-                                        ease: [0.4, 0, 0.2, 1],
-                                    }}
-                                    whileTap={{ scale: 0.95 }}
-                                    whileHover={{
-                                        scale: 1.05,
-                                        transition: { duration: 0.2 },
-                                    }}
-                                >
-                                    {/* Background highlight for current page */}
-                                    {currentPage === item.key && (
-                                        <motion.div
-                                            className="absolute inset-0 bg-gray-100 rounded-lg -z-10"
-                                            layoutId="activeTab"
-                                            transition={{ duration: 0.3, ease: "easeInOut" }}
-                                        />
-                                    )}
-
-                                    {/* Text with stagger animation */}
-                                    <motion.span
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{
-                                            duration: 0.3,
-                                            delay: isInitialLoad ? 1.2 + item.delay : 0.2 + index * 0.1,
+                        {menuItems.map((item, index) => (
+                            <motion.button
+                                key={item.key}
+                                className={`relative text-center py-3 text-3xl font-extralight transition-all w-full overflow-hidden ${
+                                    currentPage === item.key ? "text-gray-800 font-medium" : "text-black"
+                                }`}
+                                onClick={() => handleNavigate(item.key)}
+                                initial={{ opacity: 0, x: -50 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={isOpen ? { opacity: 0, x: -50 } : { opacity: 0, scale: 0.8 }}
+                                transition={{
+                                    duration: 0.5,
+                                    delay: isInitialLoad ? 1.0 + item.delay : 0.1 + index * 0.1,
+                                    ease: [0.4, 0, 0.2, 1],
+                                }}
+                                whileTap={{ scale: 0.95 }}
+                                whileHover={{
+                                    scale: 1.05,
+                                    transition: { duration: 0.2 },
+                                }}
+                            >
+                                {isOpen ? (
+                                    <>
+                                        <motion.span className="relative">
+                                            {item.label}
+                                            <motion.div
+                                                className="absolute bottom-0 left-0 w-full h-0.5 bg-gray-800"
+                                                initial={{ scaleX: 0 }}
+                                                animate={{ scaleX: currentPage === item.key ? 1 : 0 }}
+                                                exit={{ scaleX: 0 }}
+                                                transition={{ duration: 0.3 }}
+                                                style={{ transformOrigin: "left center" }}
+                                            />
+                                        </motion.span>
+                                    </>
+                                ) : (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="w-8 h-8 mx-auto"
+                                        whileHover={{
+                                            scale: 1.2,
+                                            rotate: 5,
+                                            filter: "brightness(1.2)"
                                         }}
                                     >
-                                        {item.label}
-                                    </motion.span>
-                                </motion.button>
-                            ))}
+                                        <img
+                                            src={`public/icons/${item.key}.png`}
+                                            alt={item.label}
+                                            className="w-full h-full object-contain opacity-80"
+                                        />
+                                    </motion.div>
+                                )}
+                            </motion.button>
+                        ))}
                     </AnimatePresence>
                 </motion.nav>
 
-                {/* Silhouette for closed state */}
-                <AnimatePresence>
-                    {!isOpen && (
-                        <motion.div
-                            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                            initial={{ opacity: 0, scale: 0.8, rotateY: 90 }}
-                            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                            exit={{ opacity: 0, scale: 0.8, rotateY: 90 }}
-                            transition={{ duration: 0.5, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                        >
-                            <motion.svg
-                                width="24"
-                                height="36"
-                                viewBox="0 0 40 60"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                whileHover={{ scale: 1.1 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <motion.path
-                                    d="M20 8C22.5 8 24.5 10 24.5 12.5C24.5 15 22.5 17 20 17C17.5 17 15.5 15 15.5 12.5C15.5 10 17.5 8 20 8ZM28 20C28 18 26 16 24 16H16C14 16 12 18 12 20V35H15V55H25V35H28V20Z"
-                                    fill="white"
-                                    fillOpacity="0.9"
-                                    initial={{ pathLength: 0 }}
-                                    animate={{ pathLength: 1 }}
-                                    transition={{ duration: 1, delay: 0.5 }}
-                                />
-                            </motion.svg>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Toggle Button at Bottom */}
+                {/* Enhanced Toggle Button */}
                 <motion.button
                     className="relative w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 mt-auto mx-auto"
                     style={{
-                        backgroundColor: isOpen ? "#171717" : "#ffffff",
-                    }}
-                    animate={{
-                        backgroundColor: isOpen ? "#171717" : "#ffffff",
-                        boxShadow: isOpen ? "0 4px 20px rgba(0,0,0,0.3)" : "0 4px 20px rgba(255,255,255,0.3)",
+                        backgroundColor: "#171717",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
                     }}
                     onClick={handleToggle}
                     whileTap={{ scale: 0.9 }}
                     whileHover={{
                         scale: 1.15,
                         transition: { duration: 0.2 },
+                        boxShadow: "0 6px 24px rgba(0,0,0,0.15)",
                     }}
-                    transition={{ duration: 0.4 }}
                 >
                     <motion.div
                         animate={{
                             rotate: isOpen ? 180 : 0,
-                            color: isOpen ? "#ffffff" : "#000000",
+                            x: isOpen ? 0 : -2,
+                            color: "#ffffff",
                         }}
-                        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                        transition={{
+                            duration: 0.6,
+                            ease: [0.4, 0, 0.2, 1],
+                            rotate: {
+                                type: "spring",
+                                stiffness: 200,
+                                damping: 20
+                            }
+                        }}
                         className="text-xl font-bold"
                     >
                         →
@@ -246,7 +263,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
                                 <motion.div
                                     className="absolute inset-0 border-2 rounded-full pointer-events-none"
                                     style={{
-                                        borderColor: isOpen ? "#ffffff" : "#000000",
+                                        borderColor: "#ffffff",
                                     }}
                                     initial={{ scale: 1, opacity: 1 }}
                                     animate={{ scale: 4, opacity: 0 }}
@@ -254,12 +271,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, currentPage, onNavi
                                     transition={{ duration: 0.6, ease: "easeOut" }}
                                 />
                                 <motion.div
-                                    className="absolute inset-0 rounded-full pointer-events-none"
-                                    style={{
-                                        backgroundColor: isOpen ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)",
-                                    }}
-                                    initial={{ scale: 1, opacity: 0.5 }}
-                                    animate={{ scale: 3, opacity: 0 }}
+                                    className="absolute inset-0 rounded-full pointer-events-none bg-white"
+                                    initial={{ scale: 1, opacity: 0.2 }}
+                                    animate={{ scale: 2.5, opacity: 0 }}
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 0.4, ease: "easeOut" }}
                                 />

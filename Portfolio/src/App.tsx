@@ -8,6 +8,7 @@ import ProfilePage from "./pages/ProfilePage"
 import ToolsPage from "./pages/ToolsPage"
 import RoadmapPage from "./pages/RoadmapPage"
 import ContactsPage from "./pages/ContactsPage"
+import CustomCursor from "./components/CustomCursor"
 
 export type PageType = "home" | "profile" | "tools" | "roadmap" | "contacts"
 
@@ -16,12 +17,28 @@ function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [isInitialLoad, setIsInitialLoad] = useState(true)
 
+    // Cursor repel state
+    const [cursorRepelCenter, setCursorRepelCenter] = useState({ x: 0, y: 0 })
+    const [isAvatarAngry, setIsAvatarAngry] = useState(false)
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsInitialLoad(false)
         }, 100)
         return () => clearTimeout(timer)
     }, [])
+
+    // Reset angry state when navigating away from profile page
+    useEffect(() => {
+        if (currentPage !== "profile") {
+            setIsAvatarAngry(false)
+            setCursorRepelCenter({ x: 0, y: 0 })
+        }
+    }, [currentPage])
+
+    const handleNavigate = (page: PageType) => {
+        setCurrentPage(page)
+    }
 
     const renderPage = () => {
         const pageVariants = {
@@ -47,7 +64,7 @@ function App() {
                         transition={pageTransition}
                         className="w-full h-full"
                     >
-                        <HomePage onNavigate={setCurrentPage} />
+                        <HomePage onNavigate={handleNavigate} />
                     </motion.div>
                 )
             case "profile":
@@ -61,7 +78,7 @@ function App() {
                         transition={pageTransition}
                         className="w-full h-full"
                     >
-                        <ProfilePage />
+                        <ProfilePage onCursorRepelUpdate={setCursorRepelCenter} onAngryStateChange={setIsAvatarAngry} />
                     </motion.div>
                 )
             case "tools":
@@ -117,7 +134,7 @@ function App() {
                         transition={pageTransition}
                         className="w-full h-full"
                     >
-                        <HomePage onNavigate={setCurrentPage} />
+                        <HomePage onNavigate={handleNavigate} />
                     </motion.div>
                 )
         }
@@ -125,6 +142,16 @@ function App() {
 
     return (
         <div className="relative h-screen w-screen bg-black overflow-hidden">
+            {
+                <CustomCursor
+                    repelCenter={cursorRepelCenter}
+                    repelRadius={120}
+                    repelStrength={200}
+                    repelCooldown={1200}
+                    isAngry={isAvatarAngry}
+                />
+            }
+
             {/* Main content area - always full width */}
             <main className="w-full h-full overflow-hidden">
                 <AnimatePresence mode="wait">{renderPage()}</AnimatePresence>
@@ -135,7 +162,7 @@ function App() {
                 isOpen={sidebarOpen}
                 onToggle={() => setSidebarOpen(!sidebarOpen)}
                 currentPage={currentPage}
-                onNavigate={setCurrentPage}
+                onNavigate={handleNavigate}
                 isInitialLoad={isInitialLoad}
             />
         </div>

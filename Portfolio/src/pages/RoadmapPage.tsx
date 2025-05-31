@@ -30,7 +30,7 @@ const RoadmapPage: React.FC<RoadmapPageProps> = () => {
 
             {/* Title */}
             <motion.h1
-                className="absolute top-16 left-1/2 transform -translate-x-1/2 text-8xl font-thin text-white tracking-widest z-10"
+                className="absolute top-16 left-1/3 transform -translate-x-1/2 text-8xl font-thin text-white tracking-widest z-10"
                 initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
